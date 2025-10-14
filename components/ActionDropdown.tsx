@@ -26,7 +26,6 @@ import { Button } from "@/components/ui/button";
 import {
   deleteFile,
   renameFile,
-  updateFileUsers,
 } from "@/lib/actions/file.actions";
 import { usePathname } from "next/navigation";
 import { FileDetails, ShareInput } from "@/components/ActionsModalContent";
@@ -37,7 +36,6 @@ const ActionDropdown = ({ file }: { file: Models.Document }) => {
   const [action, setAction] = useState<ActionType | null>(null);
   const [name, setName] = useState(file.name);
   const [isPending, startTransition] = useTransition();
-  const [emails, setEmails] = useState<string[]>([]);
 
   const path = usePathname();
 
@@ -46,7 +44,6 @@ const ActionDropdown = ({ file }: { file: Models.Document }) => {
     setIsDropdownOpen(false);
     setAction(null);
     setName(file.name);
-    //   setEmails([]);
   };
 
   const handleAction = async () => {
@@ -60,11 +57,6 @@ const ActionDropdown = ({ file }: { file: Models.Document }) => {
           extension: file.extension,
           path,
         });
-        closeAllModals();
-      });
-    } else if (action.value === "share") {
-      startTransition(async () => {
-        await updateFileUsers({ fileId: file.$id, emails, path });
         closeAllModals();
       });
     } else if (action.value === "delete") {
@@ -82,19 +74,6 @@ const ActionDropdown = ({ file }: { file: Models.Document }) => {
         });
       }
     }
-  };
-
-  const handleRemoveUser = async (email: string) => {
-    const updatedEmails = emails.filter((e) => e !== email);
-
-    const success = await updateFileUsers({
-      fileId: file.$id,
-      emails: updatedEmails,
-      path,
-    });
-
-    if (success) setEmails(updatedEmails);
-    closeAllModals();
   };
 
   const renderDialogContent = () => {
@@ -116,13 +95,7 @@ const ActionDropdown = ({ file }: { file: Models.Document }) => {
             />
           )}
           {value === "details" && <FileDetails file={file} />}
-          {value === "share" && (
-            <ShareInput
-              file={file}
-              onInputChange={setEmails}
-              onRemove={handleRemoveUser}
-            />
-          )}
+          {value === "share" && <ShareInput file={file} />}
           {value === "delete" && (
             <p className="delete-confirmation">
               Are you sure you want to delete{` `}
@@ -130,7 +103,7 @@ const ActionDropdown = ({ file }: { file: Models.Document }) => {
             </p>
           )}
         </DialogHeader>
-        {["rename", "delete", "share"].includes(value) && (
+        {["rename", "delete"].includes(value) && (
           <DialogFooter className="flex flex-col gap-3 md:flex-row">
             <Button onClick={closeAllModals} className="modal-cancel-button">
               Cancel
