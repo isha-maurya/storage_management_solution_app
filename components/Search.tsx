@@ -7,26 +7,29 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useDebounce } from "use-debounce";
 
 const Search = () => {
-  const [query, setQuery] = useState("");
-  const searchParams = useSearchParams();
-  const router = useRouter();
-  const path = usePathname();
-  const [debouncedQuery] = useDebounce(query, 300);
+ const searchParams = useSearchParams();
+ const router = useRouter();
+ const path = usePathname();
 
-  useEffect(() => {
-    const urlQuery = searchParams.get("query");
-    if (urlQuery !== null && urlQuery !== query) {
-      setQuery(urlQuery);
-    }
-  }, [searchParams, query]);
+  // Initialize state from URL on mount, and only on mount.
+  const [query, setQuery] = useState(searchParams.get("query") || "");
+ const [debouncedQuery] = useDebounce(query, 300);
 
+  // This effect updates the URL when the debounced query changes.
   useEffect(() => {
+    const params = new URLSearchParams(searchParams);
     if (debouncedQuery) {
-      router.push(`${path}?query=${debouncedQuery}`);
+      params.set("query", debouncedQuery);
     } else {
-      router.push(path);
+      params.delete("query");
     }
-  }, [debouncedQuery, router, path]);
+    router.push(`${path}?${params.toString()}`);
+  }, [debouncedQuery, path, router, searchParams]);
+
+  // This effect syncs the local state if the URL is changed externally (e.g., back/forward buttons)
+  useEffect(() => {
+    setQuery(searchParams.get("query") || "");
+  }, [searchParams]);
 
   return (
     <div className="search">
